@@ -3,8 +3,16 @@ import argparse
 
 class Wheel:
     class Node:
-        def __init__(self, value: int) -> None:
+
+        def __init__(
+            self,
+            value: int,
+            prev: "Wheel.Node | None" = None,
+            next: "Wheel.Node | None" = None,
+        ) -> None:
             self.value = value
+            self.prev = prev or self
+            self.next = next or self
 
     def __init__(self, ceil: int) -> None:
         self.first = self.last = self.Node(1)
@@ -16,32 +24,28 @@ class Wheel:
         return "[" + ", ".join(str_values) + "]"
 
     def append(self, value: int) -> None:
-        node = self.Node(value)
+        node = self.Node(value, self.last, self.first)
 
         self.last.next = self.first.prev = node
-        node.prev = self.last
-        node.next = self.first
         self.last = node
 
         self.dict[value] = node
 
     def remove(self, value: int) -> None:
-        node = self.dict[value]
+        node = self.dict.pop(value)
 
         node.next.prev = node.prev
         node.prev.next = node.next
 
-        if node == self.first:
+        if node is self.first:
             self.first = node.next
-        if node == self.last:
+        if node is self.last:
             self.last = node.prev
-
-        del self.dict[value]
 
     def get_values(self) -> list[int]:
         iter = self.first
         values = [iter.value]
-        while iter != self.last:
+        while iter is not self.last:
             iter = iter.next
             values.append(iter.value)
         return values
@@ -77,13 +81,17 @@ def sieve(ceil: int) -> list[int]:
 
         wheel.extend(prev_primorial, primorial)
 
-        for num in list(wheel.dict.keys()):
+        last_value = wheel.last.value
+        composites = []
+        for num in wheel.dict:
             composite = num * prime
-
-            if composite > wheel.last.value:
+            if composite > last_value:
                 break
 
-            wheel.remove(composite)
+            composites.append(composite)
+
+        for c in composites:
+            wheel.remove(c)
 
         primes.append(prime)
 
